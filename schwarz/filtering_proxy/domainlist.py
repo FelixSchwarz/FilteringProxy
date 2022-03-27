@@ -49,7 +49,11 @@ def parse_domainlist(fp):
 def parse_domainlists_from_directory(dir_path):
     domainlists = []
     for dl_path in dir_path.glob('*.domains'):
-        with dl_path.open('r') as dl_fp:
-            dl = parse_domainlist(dl_fp)
+        try:
+            with dl_path.open('r') as dl_fp:
+                dl = parse_domainlist(dl_fp)
+        except FileNotFoundError:
+            # e.g. dangling symlink
+            continue
         domainlists.append(dl)
     return domainlists
