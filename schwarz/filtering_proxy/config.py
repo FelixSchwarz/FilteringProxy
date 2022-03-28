@@ -1,5 +1,6 @@
 # -*- coding: UTF-8 -*-
 
+from configparser import ConfigParser
 from pathlib import Path
 from typing import Iterable
 
@@ -9,10 +10,26 @@ from .domainlist import parse_domainlists_from_directory, Domainlist
 __all__ = ['init_config']
 
 class Configuration:
-    def __init__(self, config_dir):
-        self.config_dir = config_dir
+    def __init__(self, config, config_path: str):
+        self.config = config
+        # just stored so the proxy can reload its configuration automatically
+        # sometime in the future
+        self.config_path = config_path
         self.allowed = None
         self.blocked = None
+
+    @classmethod
+    def with_ini(cls, cfg_path: str):
+        cfg = parse_config(cfg_path)
+        return cls(config=cfg, config_path=cfg_path)
+
+    @property
+    def rule_basedir(self):
+        basedir = self.config.get('rule_basedir', '/etc/filtering-proxy')
+        path_basedir = Path(basedir)
+        if path_basedir.is_absolute():
+            return path_basedir
+        return Path(self.config_path).parent / basedir
 
     def is_allowed(self, domain: str):
         allowed = self._get_dl(allowed=True)
@@ -30,7 +47,7 @@ class Configuration:
         if dls is not None:
             return dls
 
-        dir_path = self.config_dir / f'{attr_name}.d'
+        dir_path = self.rule_basedir / f'{attr_name}.d'
         if not dir_path.exists():
             return None
         dls = parse_domainlists_from_directory(dir_path)
@@ -46,8 +63,16 @@ class Configuration:
         return False
 
 
+def parse_config(cfg_path: str):
+    if not cfg_path:
+        return {
+            'rule_basedir': '/etc/filtering-proxy',
+        }
+    config = ConfigParser()
+    config.read(cfg_path)
+    cfg_section = config['proxy']
+    return cfg_section
 
-def init_config() -> Configuration:
-    config_dir = Path('.').absolute()
-    return Configuration(config_dir)
+def init_config(cfg_path: str) -> Configuration:
+    return Configuration.with_ini(cfg_path)
 
