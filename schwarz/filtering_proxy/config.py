@@ -3,12 +3,15 @@
 from configparser import ConfigParser
 import os
 from pathlib import Path
+import time
 from typing import Iterable
 
 from .domainlist import parse_domainlists_from_directory, Domainlist
 
 
 __all__ = ['init_config', 'Configuration']
+
+CACHE_MAX_AGE = 10
 
 class Configuration:
     def __init__(self, config, config_path: str):
@@ -19,6 +22,7 @@ class Configuration:
         self.allowed = None
         self.blocked = None
         self.ruledir_cache = {'allowed': set(), 'blocked': set()}
+        self.time_last_cache_check = None
 
     @classmethod
     def with_ini(cls, cfg_path: str):
@@ -55,17 +59,27 @@ class Configuration:
 
         if not dir_path.exists():
             return None
+        self.ruledir_cache[attr_name] = self._build_cache_key_for_directory(dir_path)
         dls = parse_domainlists_from_directory(dir_path)
         setattr(self, attr_name, dls)
         return dls
 
     def _is_cache_expired(self, cache, path_rulesdir):
+        if (self.time_last_cache_check is not None):
+            cache_age = time.time() - self.time_last_cache_check
+            if cache_age > CACHE_MAX_AGE:
+                return True
+        current = self._build_cache_key_for_directory(path_rulesdir)
+        return (current != cache)
+
+    def _build_cache_key_for_directory(self, path_rulesdir):
         try:
             with os.scandir(path_rulesdir) as dir_iter:
                 current = {(entry.name, entry.stat().st_mtime) for entry in dir_iter}
+            self.time_last_cache_check = time.time()
         except FileNotFoundError:
             current = set()
-        return (current != cache)
+        return current
 
     def matches(self, domain: str, dls: Iterable[Domainlist]):
         if not dls:

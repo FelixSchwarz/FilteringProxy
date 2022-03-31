@@ -47,6 +47,9 @@ class ConfigurationTest(PythonicTestCase):
         assert_true(cfg.is_allowed('foo.example'))
         assert_false(cfg.is_allowed('bar.example'))
 
+        create_rule(domain='bar.example', allow=True, rule_basedir=self.base_path)
+        assert_true(cfg.is_allowed('bar.example'))
+
 
 
 def create_cfg_dirs(rule_basedir):
