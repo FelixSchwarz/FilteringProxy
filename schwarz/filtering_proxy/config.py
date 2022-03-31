@@ -7,7 +7,7 @@ from typing import Iterable
 from .domainlist import parse_domainlists_from_directory, Domainlist
 
 
-__all__ = ['init_config']
+__all__ = ['init_config', 'Configuration']
 
 class Configuration:
     def __init__(self, config, config_path: str):
