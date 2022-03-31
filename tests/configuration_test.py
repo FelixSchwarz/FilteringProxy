@@ -14,3 +14,7 @@ class ConfigurationTest(PythonicTestCase):
         assert_true(cfg.is_allowed('foo.example'))
         assert_false(cfg.is_allowed('bar.example'))
 
+        assert_true(cfg.is_allowed('baz.example'))
+        cfg.config['default_rule'] = 'block'
+        assert_false(cfg.is_allowed('baz.example'))
+

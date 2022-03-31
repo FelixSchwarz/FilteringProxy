@@ -38,7 +38,8 @@ class Configuration:
         blocked = self._get_dl(blocked=True)
         if self.matches(domain, blocked):
             return False
-        return None
+        default_rule = self.config.get('default_rule', 'allow')
+        return (default_rule.lower() == 'allow')
 
     def _get_dl(self, *, allowed=None, blocked=None):
         assert (allowed is not None) ^ (blocked is not None)
@@ -66,12 +67,17 @@ class Configuration:
 def parse_config(cfg_path: str):
     if not cfg_path:
         return {
+            'default_rule': 'allow',
             'rule_basedir': '/etc/filtering-proxy',
         }
     config = ConfigParser()
     config.read(cfg_path)
     cfg_section = config['proxy']
-    return cfg_section
+    cfg = {
+        'rule_basedir': cfg_section['rule_basedir'],
+        'default_rule': cfg_section['default_rule'],
+    }
+    return cfg
 
 def init_config(cfg_path: str) -> Configuration:
     return Configuration.with_ini(cfg_path)
