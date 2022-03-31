@@ -1,6 +1,7 @@
 # -*- coding: UTF-8 -*-
 
 from configparser import ConfigParser
+import os
 from pathlib import Path
 from typing import Iterable
 
@@ -17,6 +18,7 @@ class Configuration:
         self.config_path = config_path
         self.allowed = None
         self.blocked = None
+        self.ruledir_cache = {'allowed': set(), 'blocked': set()}
 
     @classmethod
     def with_ini(cls, cfg_path: str):
@@ -44,16 +46,26 @@ class Configuration:
     def _get_dl(self, *, allowed=None, blocked=None):
         assert (allowed is not None) ^ (blocked is not None)
         attr_name = 'allowed' if allowed else 'blocked'
+        dir_path = self.rule_basedir / f'{attr_name}.d'
         dls = getattr(self, attr_name)
         if dls is not None:
-            return dls
+            cache = self.ruledir_cache[attr_name]
+            if not self._is_cache_expired(cache, dir_path):
+                return dls
 
-        dir_path = self.rule_basedir / f'{attr_name}.d'
         if not dir_path.exists():
             return None
         dls = parse_domainlists_from_directory(dir_path)
         setattr(self, attr_name, dls)
         return dls
+
+    def _is_cache_expired(self, cache, path_rulesdir):
+        try:
+            with os.scandir(path_rulesdir) as dir_iter:
+                current = {(entry.name, entry.stat().st_mtime) for entry in dir_iter}
+        except FileNotFoundError:
+            current = set()
+        return (current != cache)
 
     def matches(self, domain: str, dls: Iterable[Domainlist]):
         if not dls:
@@ -68,16 +80,22 @@ def parse_config(cfg_path: str):
     if not cfg_path:
         return {
             'default_rule': 'allow',
+            'reload_rules': 'false',
             'rule_basedir': '/etc/filtering-proxy',
         }
     config = ConfigParser()
     config.read(cfg_path)
     cfg_section = config['proxy']
     cfg = {
+        'reload_rules': parse_bool(cfg_section.get('reload_rules', 'false')),
         'rule_basedir': cfg_section['rule_basedir'],
         'default_rule': cfg_section['default_rule'],
     }
     return cfg
+
+def parse_bool(value_str):
+    assert (value_str.lower() in ('true', 'false'))
+    return (value_str.lower() == 'true')
 
 def init_config(cfg_path: str) -> Configuration:
     return Configuration.with_ini(cfg_path)

@@ -36,6 +36,17 @@ class ConfigurationTest(PythonicTestCase):
         assert_true(cfg.is_allowed('foo.example'))
         assert_false(cfg.is_allowed('bar.example'))
 
+    def test_can_detect_new_files(self):
+        create_config(self.config_path, rule_basedir=self.base_path, default_rule='block')
+        cfg = init_config(self.config_path)
+
+        assert_false(cfg.is_allowed('foo.example'))
+        assert_false(cfg.is_allowed('bar.example'))
+
+        create_rule(domain='foo.example', allow=True, rule_basedir=self.base_path)
+        assert_true(cfg.is_allowed('foo.example'))
+        assert_false(cfg.is_allowed('bar.example'))
+
 
 
 def create_cfg_dirs(rule_basedir):
