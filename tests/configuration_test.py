@@ -10,8 +10,14 @@ from schwarz.filtering_proxy import init_config, Configuration, Domainlist
 
 
 class ConfigurationTest(PythonicTestCase):
+    def setUp(self):
+        self.fs = FakeFS.set_up(test=self)
+        self.base_path = Path(self.fs.create_dir('data').path)
+        create_cfg_dirs(self.base_path)
+        self.config_path = self.base_path/'cfg'/'proxy.cfg'
+
     def test_can_decide_if_domain_is_allowed(self):
-        cfg = Configuration(config={}, config_path='/foo.cfg')
+        cfg = Configuration(config={}, config_path=str(self.config_path))
         cfg.allowed = [Domainlist(domains=('foo.example',))]
         cfg.blocked = [Domainlist(domains=('bar.example',))]
 
@@ -23,14 +29,10 @@ class ConfigurationTest(PythonicTestCase):
         assert_false(cfg.is_allowed('baz.example'))
 
     def test_can_init_config_from_file(self):
-        self.fs = FakeFS.set_up(test=self)
-        base_path = Path(self.fs.create_dir('data').path)
-        create_cfg_dirs(base_path)
-        config_path = base_path/'cfg'/'proxy.cfg'
-        create_config(config_path, rule_basedir=base_path, default_rule='block')
-        cfg = init_config(config_path)
+        create_config(self.config_path, rule_basedir=self.base_path, default_rule='block')
+        cfg = init_config(self.config_path)
 
-        create_rule(domain='foo.example', allow=True, rule_basedir=base_path)
+        create_rule(domain='foo.example', allow=True, rule_basedir=self.base_path)
         assert_true(cfg.is_allowed('foo.example'))
         assert_false(cfg.is_allowed('bar.example'))
 
