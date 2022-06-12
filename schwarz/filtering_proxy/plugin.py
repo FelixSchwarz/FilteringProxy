@@ -33,6 +33,7 @@ class DomainFilterPlugin(HttpProxyBasePlugin):
 
         if _config is None:
             _config = init_config(config_path=self.flags.config)
+        _config.reload_if_necessary()
         if _config.is_allowed(domain):
             return request
         return reject_request()

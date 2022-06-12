@@ -48,24 +48,40 @@ class ConfigurationTest(PythonicTestCase):
         create_rule(domain='bar.example', allow=True, rule_basedir=self.base_path)
         assert_true(cfg.is_allowed('bar.example'))
 
+    def test_can_detect_changed_configuration(self):
+        cfg = self._create_config(default_rule='block')
+        assert_false(cfg.is_allowed('foo.example'))
+
+        self._update_config(default_rule='allow')
+        cfg.reload_if_necessary(force=True)
+        assert_true(cfg.is_allowed('foo.example'))
+
     def _create_config(self, **cfg_options):
         create_config(self.config_path, rule_basedir=self.base_path, **cfg_options)
         cfg = init_config(self.config_path)
         return cfg
 
+    def _update_config(self, **cfg_options):
+        config = setup_configparser(self.base_path, **cfg_options)
+        with self.config_path.open('w') as config_fp:
+            config.write(config_fp)
 
 
 def create_cfg_dirs(rule_basedir):
     (rule_basedir/'allowed.d').mkdir()
     (rule_basedir/'blocked.d').mkdir()
 
-def create_config(config_path, rule_basedir, *, default_rule=None):
+def setup_configparser(rule_basedir, *, default_rule=None):
     config = ConfigParser()
     config['proxy'] = {}
     cfg_section = config['proxy']
     cfg_section['rule_basedir'] = str(rule_basedir)
     if default_rule:
         cfg_section['default_rule'] = default_rule
+    return config
+
+def create_config(config_path, rule_basedir, **cfg_options):
+    config = setup_configparser(rule_basedir, **cfg_options)
     config_dir = config_path.parent
     config_dir.mkdir(exist_ok=True)
     with config_path.open('x') as config_fp:

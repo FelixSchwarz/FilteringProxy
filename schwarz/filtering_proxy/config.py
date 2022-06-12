@@ -16,9 +16,12 @@ CACHE_MAX_AGE = 10
 class Configuration:
     def __init__(self, config, config_path: str):
         self.config = config
-        # just stored so the proxy can reload its configuration automatically
-        # sometime in the future
-        self.config_path = config_path
+        self.config_path = Path(config_path)
+        if self.config_path.exists():
+            config_mtime = self.config_path.stat().st_mtime
+        else:
+            config_mtime = None
+        self.config_mtime = config_mtime
         self.allowed = None
         self.blocked = None
         self.ruledir_cache = {'allowed': set(), 'blocked': set()}
@@ -36,6 +39,13 @@ class Configuration:
         if path_basedir.is_absolute():
             return path_basedir
         return Path(self.config_path).parent / basedir
+
+    def reload_if_necessary(self, *, force=False):
+        mtime = Path(self.config_path).stat().st_mtime
+        if (not force) and mtime <= self.config_mtime:
+            return
+        self.config = parse_config(self.config_path)
+        self.config_mtime = mtime
 
     def is_allowed(self, domain: str):
         allowed = self._get_dl(allowed=True)
