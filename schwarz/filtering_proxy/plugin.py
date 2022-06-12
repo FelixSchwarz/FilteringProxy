@@ -22,16 +22,19 @@ flags.add_argument(
 class DomainFilterPlugin(HttpProxyBasePlugin):
     def before_upstream_connection(self, request):
         global _config
+        if _config is None:
+            _config = init_config(cfg_path=self.flags.config)
+
         try:
             domain = request.host.decode("ASCII")
         except:
             # LATER: support non-ascii domains
-            pass
-        else:
-            if _config is None:
-                _config = init_config(self.flags.config)
-            if _config.is_allowed(domain):
-                return request
+            return reject_request()
+
+        if _config is None:
+            _config = init_config(config_path=self.flags.config)
+        if _config.is_allowed(domain):
+            return request
         return reject_request()
 
 
