@@ -29,16 +29,14 @@ class ConfigurationTest(PythonicTestCase):
         assert_false(cfg.is_allowed('baz.example'))
 
     def test_can_init_config_from_file(self):
-        create_config(self.config_path, rule_basedir=self.base_path, default_rule='block')
-        cfg = init_config(self.config_path)
+        cfg = self._create_config(default_rule='block')
 
         create_rule(domain='foo.example', allow=True, rule_basedir=self.base_path)
         assert_true(cfg.is_allowed('foo.example'))
         assert_false(cfg.is_allowed('bar.example'))
 
     def test_can_detect_new_files(self):
-        create_config(self.config_path, rule_basedir=self.base_path, default_rule='block')
-        cfg = init_config(self.config_path)
+        cfg = self._create_config(default_rule='block')
 
         assert_false(cfg.is_allowed('foo.example'))
         assert_false(cfg.is_allowed('bar.example'))
@@ -49,6 +47,11 @@ class ConfigurationTest(PythonicTestCase):
 
         create_rule(domain='bar.example', allow=True, rule_basedir=self.base_path)
         assert_true(cfg.is_allowed('bar.example'))
+
+    def _create_config(self, **cfg_options):
+        create_config(self.config_path, rule_basedir=self.base_path, **cfg_options)
+        cfg = init_config(self.config_path)
+        return cfg
 
 
 
