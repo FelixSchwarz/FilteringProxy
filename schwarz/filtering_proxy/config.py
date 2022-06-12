@@ -1,10 +1,13 @@
 # -*- coding: UTF-8 -*-
 
 from configparser import ConfigParser
+import logging
 import os
 from pathlib import Path
 import time
 from typing import Iterable
+
+from schwarz.log_utils import get_logger
 
 from .domainlist import parse_domainlists_from_directory, Domainlist
 
@@ -40,10 +43,23 @@ class Configuration:
             return path_basedir
         return Path(self.config_path).parent / basedir
 
+    @property
+    def log(self):
+        path_logfile = self.config.get('log_file')
+        if not path_logfile:
+            return get_logger(__name__, log=False)
+
+        logger = get_logger(__name__, level=logging.INFO)
+        file_ = logging.FileHandler(path_logfile)
+        file_.setFormatter(logging.Formatter('%(asctime)s %(message)s'))
+        logger.addHandler(file_)
+        return logger
+
     def reload_if_necessary(self, *, force=False):
         mtime = Path(self.config_path).stat().st_mtime
         if (not force) and mtime <= self.config_mtime:
             return
+        self.log.info('config file "%s" was modified, reloading config', self.config_path)
         self.config = parse_config(self.config_path)
         self.config_mtime = mtime
 
@@ -66,6 +82,7 @@ class Configuration:
             cache = self.ruledir_cache[attr_name]
             if not self._is_cache_expired(cache, dir_path):
                 return dls
+            self.log.info('cache expired, reloading domain lists')
 
         if not dir_path.exists():
             return None
@@ -113,7 +130,8 @@ def parse_config(cfg_path: str):
     cfg = {
         'reload_rules': parse_bool(cfg_section.get('reload_rules', 'false')),
         'rule_basedir': cfg_section['rule_basedir'],
-        'default_rule': cfg_section['default_rule'],
+        'default_rule': cfg_section.get('default_rule'),
+        'log_file': cfg_section.get('log_file'),
     }
     return cfg
 

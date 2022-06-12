@@ -56,6 +56,17 @@ class ConfigurationTest(PythonicTestCase):
         cfg.reload_if_necessary(force=True)
         assert_true(cfg.is_allowed('foo.example'))
 
+    def test_can_load_logging_configuration(self):
+        log_path = str(self.base_path / 'proxy.log')
+        cfg = self._create_config(log_file=log_path)
+
+        cfg.log.info('foo bar')
+        assert_path_exists(log_path)
+        with open(log_path, 'r') as log_fp:
+            logged_lines = tuple(log_fp.readlines())
+        line, = logged_lines
+        assert_contains('foo bar', line)
+
     def _create_config(self, **cfg_options):
         create_config(self.config_path, rule_basedir=self.base_path, **cfg_options)
         cfg = init_config(self.config_path)
@@ -71,13 +82,13 @@ def create_cfg_dirs(rule_basedir):
     (rule_basedir/'allowed.d').mkdir()
     (rule_basedir/'blocked.d').mkdir()
 
-def setup_configparser(rule_basedir, *, default_rule=None):
+def setup_configparser(rule_basedir, **cfg_options):
     config = ConfigParser()
     config['proxy'] = {}
     cfg_section = config['proxy']
     cfg_section['rule_basedir'] = str(rule_basedir)
-    if default_rule:
-        cfg_section['default_rule'] = default_rule
+    for cfg_key, cfg_value in cfg_options.items():
+        cfg_section[cfg_key] = cfg_value
     return config
 
 def create_config(config_path, rule_basedir, **cfg_options):

@@ -24,18 +24,22 @@ class DomainFilterPlugin(HttpProxyBasePlugin):
         global _config
         if _config is None:
             _config = init_config(cfg_path=self.flags.config)
+            _config.log.info('loading config from file %s', _config.config_path)
 
         try:
             domain = request.host.decode("ASCII")
         except:
             # LATER: support non-ascii domains
+            _config.log.warn('exception when decoding request host name %r, rejecting request', request.host)
             return reject_request()
 
         if _config is None:
             _config = init_config(config_path=self.flags.config)
         _config.reload_if_necessary()
         if _config.is_allowed(domain):
+            _config.log.debug(f'{request.host} OK')
             return request
+        _config.log.info(f'{request.host} BLOCKED')
         return reject_request()
 
 
