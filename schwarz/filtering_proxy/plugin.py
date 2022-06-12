@@ -1,11 +1,11 @@
 # -*- coding: UTF-8 -*-
 
+from proxy.common.flag import flags
 from proxy.http import httpStatusCodes as StatusCode
 from proxy.http.exception import HttpRequestRejected
 from proxy.http.proxy import HttpProxyBasePlugin
 
 from .config import init_config
-from proxy.common.flag import flags
 
 
 __all__ = ['DomainFilterPlugin']
