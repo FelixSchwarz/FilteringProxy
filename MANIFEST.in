@@ -1,2 +1,3 @@
 include tests/*.py
+include Changelog.md
 include VERSION.txt
