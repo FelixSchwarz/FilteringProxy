@@ -2,11 +2,15 @@
 
 from configparser import ConfigParser
 
+from proxy.common.utils import build_http_request
+from proxy.http.parser import HttpParser
+
 
 __all__ = [
     'create_cfg_dirs',
     'create_config',
     'create_rule',
+    'fake_request',
     'setup_configparser',
 ]
 
@@ -38,4 +42,10 @@ def create_rule(domain, *, allow=True, rule_basedir):
     with rulefile_path.open('x') as fp:
         fp.write(f'{domain}\n')
     print(f'created {rulefile_path}')
+
+def fake_request(host):
+    url = b'https://' + host + b'/foo'
+    request_bytes = build_http_request(b'GET', url)
+    request = HttpParser.request(request_bytes, enable_proxy_protocol=False)
+    return request
 
