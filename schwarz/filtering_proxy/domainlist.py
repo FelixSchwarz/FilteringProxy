@@ -40,7 +40,7 @@ def parse_domainlist(fp):
         domain_str = line_str.strip()
         if not domain_str:
             continue
-        is_comment = re.search('^\s*#', domain_str)
+        is_comment = re.search(r'^\s*#', domain_str)
         if is_comment:
             continue
         domains.append(domain_str)
