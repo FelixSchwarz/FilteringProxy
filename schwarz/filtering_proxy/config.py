@@ -56,7 +56,11 @@ class Configuration:
         return logger
 
     def reload_if_necessary(self, *, force=False):
-        mtime = Path(self.config_path).stat().st_mtime
+        config_path = Path(self.config_path)
+        try:
+            mtime = config_path.stat().st_mtime
+        except FileNotFoundError:
+            return
         if (not force) and mtime <= self.config_mtime:
             return
         self.log.info('config file "%s" was modified, reloading config', self.config_path)
