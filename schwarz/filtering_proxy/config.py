@@ -2,12 +2,11 @@
 
 from configparser import ConfigParser
 import logging
+from logging import Logger
 import os
 from pathlib import Path
 import time
 from typing import Iterable
-
-from schwarz.log_utils import get_logger
 
 from .domainlist import parse_domainlists_from_directory, Domainlist
 
@@ -46,10 +45,9 @@ class Configuration:
     @property
     def log(self):
         path_logfile = self.config.get('log_file')
+        logger = Logger(__name__, level=logging.INFO)
         if not path_logfile:
-            return get_logger(__name__, log=False)
-
-        logger = get_logger(__name__, level=logging.INFO)
+            return logger
         file_ = logging.FileHandler(path_logfile)
         file_.setFormatter(logging.Formatter('%(asctime)s %(message)s'))
         logger.addHandler(file_)
