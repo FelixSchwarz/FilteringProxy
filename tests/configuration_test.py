@@ -42,10 +42,12 @@ class ConfigurationTest(PythonicTestCase):
         assert_false(cfg.is_allowed('bar.example'))
 
         create_rule(domain='foo.example', allow=True, rule_basedir=self.base_path)
+        cfg.time_last_cache_check = None
         assert_true(cfg.is_allowed('foo.example'))
         assert_false(cfg.is_allowed('bar.example'))
 
         create_rule(domain='bar.example', allow=True, rule_basedir=self.base_path)
+        cfg.time_last_cache_check = None
         assert_true(cfg.is_allowed('bar.example'))
 
     def test_can_detect_changed_configuration(self):

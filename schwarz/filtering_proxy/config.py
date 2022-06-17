@@ -94,18 +94,18 @@ class Configuration:
         return dls
 
     def _is_cache_expired(self, cache, path_rulesdir):
-        if (self.time_last_cache_check is not None):
+        if self.time_last_cache_check is not None:
             cache_age = time.time() - self.time_last_cache_check
-            if cache_age > CACHE_MAX_AGE:
-                return True
+            if cache_age < CACHE_MAX_AGE:
+                return False
         current = self._build_cache_key_for_directory(path_rulesdir)
         return (current != cache)
 
     def _build_cache_key_for_directory(self, path_rulesdir):
+        self.time_last_cache_check = time.time()
         try:
             with os.scandir(path_rulesdir) as dir_iter:
                 current = {(entry.name, entry.stat().st_mtime) for entry in dir_iter}
-            self.time_last_cache_check = time.time()
         except FileNotFoundError:
             current = set()
         return current
