@@ -38,9 +38,9 @@ class DomainFilterPlugin(HttpProxyBasePlugin):
         _config.reload_if_necessary()
         host_str = str(request.host)[1:]
         if _config.is_allowed(domain):
-            _config.log.debug(f'{host_str} OK')
+            _config.log.debug(f'{domain} OK')
             return request
-        _config.log.info(f'{host_str} BLOCKED')
+        _config.log.info(f'{domain} BLOCKED')
         return reject_request()
 
 
