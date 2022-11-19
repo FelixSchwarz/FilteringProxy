@@ -23,7 +23,7 @@ class DomainFilterPlugin(HttpProxyBasePlugin):
     def before_upstream_connection(self, request):
         global _config
         if _config is None:
-            _config = init_config(cfg_path=self.flags.config)
+            _config = init_config(cfg_path=self.config_path)
             _config.log.info('loading config from file %s', _config.config_path)
 
         try:
@@ -34,7 +34,7 @@ class DomainFilterPlugin(HttpProxyBasePlugin):
             return reject_request()
 
         if _config is None:
-            _config = init_config(config_path=self.flags.config)
+            _config = init_config(config_path=self.config_path)
         _config.reload_if_necessary()
         host_str = str(request.host)[1:]
         if _config.is_allowed(domain):
@@ -42,6 +42,11 @@ class DomainFilterPlugin(HttpProxyBasePlugin):
             return request
         _config.log.info(f'{host_str} BLOCKED')
         return reject_request()
+
+
+    @property
+    def config_path(self):
+        return getattr(self.flags, 'config', None)
 
 
 
